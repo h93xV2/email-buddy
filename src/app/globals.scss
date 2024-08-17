@@ -1,0 +1,40 @@
+@import 'bulma/bulma.scss';
+
+html, body {
+  height: 100%; /* Ensure the body takes up the full viewport height */
+  overflow: hidden; /* Prevent the page from scrolling */
+}
+
+.email-thread-item {
+  border: 1px solid var(--bulma-text);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.messages {
+  background-color: white;
+  height: 0px;
+}
+
+.full-height-column {
+  height: calc(100vh - var(--bulma-navbar-height));
+}
+
+.is-overflow-y-auto {
+  overflow-y: auto;
+}
+
+.editor-container {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background-color: var(--bulma-background);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.editor {
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}

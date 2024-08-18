@@ -6,8 +6,8 @@ html, body {
 }
 
 .email-thread-item {
-  border: 1px solid var(--bulma-text);
-  border-radius: 5px;
+  border: 1px solid var(--bulma-border);
+  border-radius: var(--bulma-radius);
   cursor: pointer;
 }
 
@@ -25,16 +25,5 @@ html, body {
 }
 
 .editor-container {
-  position: sticky;
-  bottom: 0;
-  z-index: 100;
-  background-color: var(--bulma-background);
-  box-sizing: border-box;
-  width: 100%;
-}
-
-.editor {
-  max-height: 500px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  border-top: 1px solid var(--bulma-border);
 }

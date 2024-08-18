@@ -1,8 +1,18 @@
 import Inbox from "@/components/inbox";
-import { fetchRecentThreads } from "@/nylas";
+import { fetchRecentThreads, getFolders, getThreadsByFolderId } from "@/nylas";
+
+const getThreadsForInbox = async (folderId: string | undefined) => {
+  if (folderId) {
+    return (await getThreadsByFolderId(folderId))['data'];
+  }
+
+  return (await fetchRecentThreads())['data'];
+};
 
 export default async function Home() {
-  const threads = (await fetchRecentThreads())['data'];
+  const folders = (await getFolders())['data'];
+  const inbox = folders.find(folder => folder.name === 'INBOX');
+  const threads = await getThreadsForInbox(inbox?.id);
 
   return (
     <main>
@@ -41,7 +51,7 @@ export default async function Home() {
           </div>
         </div>
       </nav>
-      <Inbox threads={threads} />
+      <Inbox threads={threads} folders={folders} />
     </main>
   );
 }

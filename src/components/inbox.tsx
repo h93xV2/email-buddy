@@ -1,6 +1,6 @@
 'use client';
 
-import { Folder, type Message, type Thread } from "nylas";
+import { EmailName, Folder, type Message, type Thread } from "nylas";
 import React, { useEffect, useRef, useState } from "react";
 import 'quill/dist/quill.snow.css';
 import type Quill from "quill";
@@ -11,7 +11,7 @@ import { faEnvelope as faEnvelopeSolid } from "@fortawesome/free-solid-svg-icons
 type Props = {
   threads: Thread[],
   folders: Folder[],
-  grantId?: string
+  grantId: string
 };
 
 type DraftResult = {
@@ -21,17 +21,16 @@ type DraftResult = {
 type ThreadData = {
   subject?: string,
   messages: Message[],
-  to?: string[]
+  to?: EmailName[]
 };
 
 export default function Inbox(props: Props) {
   const { threads, folders, grantId } = props;
-
   const [threadData, setThreadData] = useState<ThreadData | null>(null);
   const quillRef = useRef<HTMLDivElement>(null);
   const [quill, setQuill] = useState<Quill | null>(null);
   const retrieveMessages = (thread: Thread) => {
-    const query = new URLSearchParams({ threadId: thread.id });
+    const query = new URLSearchParams({ threadId: thread.id, grantId: grantId });
 
     fetch(`/api/messages?${query}`)
       .then((response) => {
@@ -39,7 +38,7 @@ export default function Inbox(props: Props) {
           const messages: Message[] = JSON.parse(json);
           const to = messages.sort((a, b) => b.date - a.date);
 
-          setThreadData({ subject: thread.subject, messages: JSON.parse(json) });
+          setThreadData({ subject: thread.latestDraftOrMessage.subject, messages: JSON.parse(json) });
 
           if (quill) {
             quill.setText("");
@@ -66,11 +65,10 @@ export default function Inbox(props: Props) {
 
   const generateDraft = (threadData: ThreadData) => {
     const messages = threadData.messages;
-    const messagesAsStrings = messages.map(message => message.body).filter(message => message !== undefined);
 
     fetch('/api/drafts', {
       method: 'POST',
-      body: JSON.stringify({ messages: messagesAsStrings, subject: threadData.subject, to: threadData.to })
+      body: JSON.stringify({ grantId, messages, subject: threadData.subject, to: threadData.to })
     }).then(response => {
       response.json().then((result: DraftResult) => {
         if (quill) {

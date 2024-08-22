@@ -10,7 +10,8 @@ import { faEnvelope as faEnvelopeSolid } from "@fortawesome/free-solid-svg-icons
 
 type Props = {
   threads: Thread[],
-  folders: Folder[]
+  folders: Folder[],
+  grantId?: string
 };
 
 type DraftResult = {
@@ -24,7 +25,8 @@ type ThreadData = {
 };
 
 export default function Inbox(props: Props) {
-  const { threads, folders } = props;
+  const { threads, folders, grantId } = props;
+
   const [threadData, setThreadData] = useState<ThreadData | null>(null);
   const quillRef = useRef<HTMLDivElement>(null);
   const [quill, setQuill] = useState<Quill | null>(null);
@@ -34,6 +36,9 @@ export default function Inbox(props: Props) {
     fetch(`/api/messages?${query}`)
       .then((response) => {
         response.json().then(json => {
+          const messages: Message[] = JSON.parse(json);
+          const to = messages.sort((a, b) => b.date - a.date);
+
           setThreadData({ subject: thread.subject, messages: JSON.parse(json) });
 
           if (quill) {
@@ -59,12 +64,13 @@ export default function Inbox(props: Props) {
     }
   }, [quill]);
 
-  const generateDraft = (messages: Message[]) => {
+  const generateDraft = (threadData: ThreadData) => {
+    const messages = threadData.messages;
     const messagesAsStrings = messages.map(message => message.body).filter(message => message !== undefined);
 
     fetch('/api/drafts', {
       method: 'POST',
-      body: JSON.stringify({ messages: messagesAsStrings })
+      body: JSON.stringify({ messages: messagesAsStrings, subject: threadData.subject, to: threadData.to })
     }).then(response => {
       response.json().then((result: DraftResult) => {
         if (quill) {
@@ -159,7 +165,7 @@ export default function Inbox(props: Props) {
               {threadData && (
                 <button
                   className='button is-link'
-                  onClick={() => { if (threadData?.messages) generateDraft(threadData?.messages) }}
+                  onClick={() => { if (threadData?.messages) generateDraft(threadData) }}
                 >
                   {"Generate Draft"}&nbsp;&nbsp;<FontAwesomeIcon icon={faPenToSquare} />
                 </button>

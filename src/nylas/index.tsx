@@ -1,25 +1,21 @@
 import Nylas, { CreateDraftRequest, SendMessageRequest } from 'nylas';
 
-const NylasConfig = {
+const nylas = new Nylas({
   apiKey: process.env.NYLAS_API_KEY as string,
   apiUri: process.env.NYLAS_API_URI as string,
-};
+});
 
-const nylas = new Nylas(NylasConfig);
-
-const fetchRecentThreads = async () => {
-  const identifier = process.env.NYLAS_TEST_GRANT as string;
+const fetchRecentThreads = async (grantId: string) => {
   const threads = await nylas.threads.list({
-    identifier
+    identifier: grantId
   });
 
   return threads;
 };
 
-const getThreadsByFolderId = async (folderId: string) => {
-  const identifier = process.env.NYLAS_TEST_GRANT as string;
+const getThreadsByFolderId = async (grantId: string, folderId: string) => {
   const threads = await nylas.threads.list({
-    identifier,
+    identifier: grantId,
     queryParams: {
       in: [folderId]
     }
@@ -28,10 +24,9 @@ const getThreadsByFolderId = async (folderId: string) => {
   return threads;
 };
 
-const getMessagesInThread = async (threadId: string) => {
-  const identifier = process.env.NYLAS_TEST_GRANT as string;
+const getMessagesInThread = async (grantId: string, threadId: string) => {
   const result = await nylas.messages.list({
-    identifier,
+    identifier: grantId,
     queryParams: {
       threadId
     }
@@ -40,33 +35,42 @@ const getMessagesInThread = async (threadId: string) => {
   return result;
 };
 
-const getFolders = async () => {
-  const identifier = process.env.NYLAS_TEST_GRANT as string;
+const getFolders = async (grantId: string) => {
   const folders = await nylas.folders.list({
-    identifier
+    identifier: grantId
   });
 
   return folders;
 };
 
-const sendEmail = async (sendMessageRequest: SendMessageRequest) => {
-  const identifier = process.env.NYLAS_TEST_GRANT as string;
+const sendEmail = async (grantId: string, sendMessageRequest: SendMessageRequest) => {
   const sendMessage = await nylas.messages.send({
-    identifier,
+    identifier: grantId,
     requestBody: sendMessageRequest
   });
 
   return sendMessage;
 };
 
-const createDraft = async (draft: CreateDraftRequest) => {
-  const identifier = process.env.NYLAS_TEST_GRANT as string;
+const createDraft = async (grantId: string, draft: CreateDraftRequest) => {
   const createDraft = await nylas.drafts.create({
-    identifier,
+    identifier: grantId,
     requestBody: draft
   });
 
   return createDraft;
 };
 
-export { fetchRecentThreads, getMessagesInThread, getFolders, getThreadsByFolderId, sendEmail, createDraft }
+const getGoogleAuthUrl = async (userEmail: string) => {
+  return nylas.auth.urlForOAuth2({
+    clientId: process.env.NYLAS_CLIENT_ID as string,
+    provider: 'google',
+    redirectUri: process.env.NYLAS_REDIRECT_URI as string,
+    loginHint: userEmail,
+  });
+};
+
+export {
+  fetchRecentThreads, getMessagesInThread, getFolders, getThreadsByFolderId, sendEmail, createDraft,
+  getGoogleAuthUrl
+}

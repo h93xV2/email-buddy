@@ -1,18 +1,31 @@
 import Inbox from "@/components/inbox";
+import Login from "@/components/login";
 import { fetchRecentThreads, getFolders, getThreadsByFolderId } from "@/nylas";
+import { cookies } from 'next/headers';
 
-const getThreadsForInbox = async (folderId: string | undefined) => {
+const getThreadsForInbox = async (grantId: string, folderId: string | undefined) => {
   if (folderId) {
-    return (await getThreadsByFolderId(folderId))['data'];
+    return (await getThreadsByFolderId(grantId, folderId))['data'];
   }
 
-  return (await fetchRecentThreads())['data'];
+  return (await fetchRecentThreads(grantId))['data'];
 };
 
 export default async function Home() {
-  const folders = (await getFolders())['data'];
+  const cookieStore = cookies();
+
+  const grantCookie = cookieStore.get('email-buddy-nylas-grant-id');
+  const grantId = grantCookie?.value;
+
+  if (!grantId) {
+    return (
+      <Login />
+    );
+  }
+
+  const folders = (await getFolders(grantId))['data'];
   const inbox = folders.find(folder => folder.name === 'INBOX');
-  const threads = await getThreadsForInbox(inbox?.id);
+  const threads = await getThreadsForInbox(grantId, inbox?.id);
 
   return (
     <main>
@@ -51,7 +64,7 @@ export default async function Home() {
           </div>
         </div>
       </nav>
-      <Inbox threads={threads} folders={folders} />
+      <Inbox grantId={grantId} threads={threads} folders={folders} />
     </main>
   );
 }

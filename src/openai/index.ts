@@ -4,8 +4,6 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-type DraftCallback = (chunk: string) => void;
-
 const DRAFT_CREATION_PROMPT = `
 You are an intelligent email assistant.
 

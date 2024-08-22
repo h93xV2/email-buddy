@@ -2,9 +2,9 @@ import { createDraft } from "@/nylas";
 import { createDraftBody } from "@/openai";
 
 export async function POST(request: Request) {
-  const {messages, subject, to} = (await request.json());
+  const {grantId, messages, subject, to} = (await request.json());
   const body = (await createDraftBody(messages));
-  const draft = createDraft({
+  const draft = createDraft(grantId, {
     subject,
     to,
     body

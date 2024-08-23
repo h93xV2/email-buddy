@@ -1,36 +1,30 @@
 'use client';
 
-import { EmailName, Folder, type Message, type Thread } from "nylas";
+import { Folder, type Message, type Thread } from "nylas";
 import React, { useEffect, useRef, useState } from "react";
 import 'quill/dist/quill.snow.css';
 import type Quill from "quill";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEnvelopeOpen, faPenToSquare, faPaperPlane, faEnvelope } from "@fortawesome/free-regular-svg-icons";
-import { faEnvelope as faEnvelopeSolid } from "@fortawesome/free-solid-svg-icons";
+import { faEnvelopeOpen } from "@fortawesome/free-regular-svg-icons";
+import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
+import { ThreadData } from "@/components/types";
+import Editor from "./editor";
 
 type Props = {
   threads: Thread[],
   folders: Folder[],
-  grantId: string
-};
-
-type DraftResult = {
-  body: string
-};
-
-type ThreadData = {
-  subject?: string,
-  messages: Message[],
-  to?: EmailName[]
+  grantId: string,
+  activeFolder: string
 };
 
 export default function Inbox(props: Props) {
-  const { threads, folders, grantId } = props;
+  const [activeFolder, setActiveFolder] = useState(props.activeFolder);
+  const [threads, setThreads] = useState(props.threads);
   const [threadData, setThreadData] = useState<ThreadData | null>(null);
   const quillRef = useRef<HTMLDivElement>(null);
   const [quill, setQuill] = useState<Quill | null>(null);
   const retrieveMessages = (thread: Thread) => {
-    const query = new URLSearchParams({ threadId: thread.id, grantId: grantId });
+    const query = new URLSearchParams({ threadId: thread.id, grantId: props.grantId });
 
     fetch(`/api/messages?${query}`)
       .then((response) => {
@@ -38,6 +32,7 @@ export default function Inbox(props: Props) {
           const messages: Message[] = JSON.parse(json);
           const to = messages.sort((a, b) => b.date - a.date);
 
+          // Add a check for do-not reply type emails
           setThreadData({ subject: thread.latestDraftOrMessage.subject, messages: JSON.parse(json) });
 
           if (quill) {
@@ -46,8 +41,16 @@ export default function Inbox(props: Props) {
         });
       });
   };
-  const sendMessage = () => {
+  const updateThreadsForFolder = (folder: Folder) => {
+    setActiveFolder(folder.name);
+    document.querySelectorAll('.thread-cell').forEach(element => element.classList.add('is-skeleton'));
 
+    fetch(`/api/threads?folderId=${folder.id}&grantId=${props.grantId}`).then(response => {
+      response.json().then(newThreads => {
+        setThreads(newThreads);
+        document.querySelectorAll('.thread-cell').forEach(element => element.classList.remove('is-skeleton'));
+      });
+    });
   };
 
   useEffect(() => {
@@ -63,21 +66,6 @@ export default function Inbox(props: Props) {
     }
   }, [quill]);
 
-  const generateDraft = (threadData: ThreadData) => {
-    const messages = threadData.messages;
-
-    fetch('/api/drafts', {
-      method: 'POST',
-      body: JSON.stringify({ grantId, messages, subject: threadData.subject, to: threadData.to })
-    }).then(response => {
-      response.json().then((result: DraftResult) => {
-        if (quill) {
-          quill.setText(result.body);
-        }
-      });
-    });
-  };
-
   return (
     <div className="columns is-gapless">
       <div className="column is-one-quarter">
@@ -87,11 +75,18 @@ export default function Inbox(props: Props) {
               <p className="menu-label">Folders</p>
               <ul className="menu-list">
                 {
-                  folders.map((folder, index) => {
+                  props.folders.map((folder, index) => {
                     if (folder.attributes && folder.attributes.length > 0) {
-                      return <li key={index}><a className={folder.name === 'INBOX' ? 'is-active' : ''}>
-                        {`${folder.attributes[0].replace("\\", "")} (${folder.totalCount})`}
-                      </a></li>
+                      return (
+                        <li key={index}>
+                          <a
+                            className={folder.name === activeFolder ? 'is-active' : ''}
+                            onClick={() => updateThreadsForFolder(folder)}
+                          >
+                            {`${folder.attributes[0].replace("\\", "")} (${folder.totalCount})`}
+                          </a>
+                        </li>
+                      );
                     }
                   })
                 }
@@ -103,23 +98,25 @@ export default function Inbox(props: Props) {
               <div className="grid p-2">
                 {
                   threads.map((thread, index) => {
-                    return <div className="cell" key={index}>
-                      <div className="email-thread-item p-1" onClick={() => retrieveMessages(thread)}>
-                        <div className="columns is-gapless">
-                          <div className="column is-11">
-                            <p><b>{thread.subject}</b></p>
-                            <p>{thread.snippet?.substring(0, 20) + "..."}</p>
-                          </div>
-                          <div className="column">
-                            <div className="is-flex is-justify-content-end pr-2 pt-2">
-                              <FontAwesomeIcon
-                                icon={thread.unread ? faEnvelopeSolid : faEnvelopeOpen}
-                              />
+                    return (
+                      <div className="cell thread-cell" key={index}>
+                        <div className="email-thread-item is-clickable p-1" onClick={() => retrieveMessages(thread)}>
+                          <div className="columns is-gapless">
+                            <div className="column is-11">
+                              <p><b>{thread.subject}</b></p>
+                              <p>{thread.snippet?.substring(0, 20) + "..."}</p>
+                            </div>
+                            <div className="column">
+                              <div className="is-flex is-justify-content-end pr-2 pt-2">
+                                <FontAwesomeIcon
+                                  icon={thread.unread ? faEnvelope : faEnvelopeOpen}
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    );
                   })
                 }
               </div>
@@ -140,39 +137,7 @@ export default function Inbox(props: Props) {
           </div>
         </div>
         <div className="is-align-content-end editor-container">
-          <div className='pt-4 pl-6 pr-6 pb-5'>
-            <div className="mb-2">
-              <div className="field mb-1">
-                <label className="label">To</label>
-                <div className="control control has-icons-left">
-                  <input className="input" type="email" placeholder="Email" />
-                  <span className="icon is-small is-left">
-                    <FontAwesomeIcon icon={faEnvelope} />
-                  </span>
-                </div>
-              </div>
-              <div className="field">
-                <label className="label">Subject</label>
-                <div className="control">
-                  <input className="input" type="text" placeholder="Subject" value={threadData?.subject} />
-                </div>
-              </div>
-            </div>
-            <div ref={quillRef} style={{ minHeight: '200px' }} />
-            <div className='pb-2 pt-2 buttons is-right'>
-              {threadData && (
-                <button
-                  className='button is-link'
-                  onClick={() => { if (threadData?.messages) generateDraft(threadData) }}
-                >
-                  {"Generate Draft"}&nbsp;&nbsp;<FontAwesomeIcon icon={faPenToSquare} />
-                </button>
-              )}
-              <button className='button is-primary'>
-                {"Send"}&nbsp;&nbsp;<FontAwesomeIcon icon={faPaperPlane} />
-              </button>
-            </div>
-          </div>
+          <Editor grantId={props.grantId} quill={quill} quillRef={quillRef} threadData={threadData} />
         </div>
       </div>
     </div>

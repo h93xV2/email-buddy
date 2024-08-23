@@ -1,5 +1,6 @@
 import Inbox from "@/components/inbox";
 import Login from "@/components/login";
+import { GRANT_ID_COOKIE } from "@/constants";
 import { fetchRecentThreads, getFolders, getThreadsByFolderId } from "@/nylas";
 import { cookies } from 'next/headers';
 
@@ -14,7 +15,7 @@ const getThreadsForInbox = async (grantId: string, folderId: string | undefined)
 export default async function Home() {
   const cookieStore = cookies();
 
-  const grantCookie = cookieStore.get('email-buddy-nylas-grant-id');
+  const grantCookie = cookieStore.get(GRANT_ID_COOKIE);
   const grantId = grantCookie?.value;
 
   if (!grantId) {
@@ -23,8 +24,9 @@ export default async function Home() {
     );
   }
 
+  const activeFolder = 'INBOX';
   const folders = (await getFolders(grantId))['data'];
-  const inbox = folders.find(folder => folder.name === 'INBOX');
+  const inbox = folders.find(folder => folder.name === activeFolder);
   const threads = await getThreadsForInbox(grantId, inbox?.id);
 
   return (
@@ -57,14 +59,14 @@ export default async function Home() {
                 Settings
               </a>
               <hr className="navbar-divider" />
-              <a className="navbar-item">
+              <a className="navbar-item" href="/api/auth/logout">
                 Logout
               </a>
             </div>
           </div>
         </div>
       </nav>
-      <Inbox grantId={grantId} threads={threads} folders={folders} />
+      <Inbox activeFolder={activeFolder} grantId={grantId} threads={threads} folders={folders} />
     </main>
   );
 }

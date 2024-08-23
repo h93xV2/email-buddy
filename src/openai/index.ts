@@ -43,4 +43,19 @@ const createDraftBody = async (userEmail: string, emailsInThread: Message[]) => 
   return result.choices[0].message.content || '';
 };
 
+const IS_NO_REPLY_PROMPT = `
+You are a hyper intelligent email filter.
+A user will present you with an email message they received.
+Your job is to determine if the email should be replied to.
+`;
+
+const isNoReply = async (userEmail: string, emailsInThread: Message[]) => {
+  const result = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      {"role": Role.SYSTEM, "content": ""}
+    ]
+  });
+}
+
 export { createDraftBody }

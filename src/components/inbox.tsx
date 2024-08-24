@@ -1,6 +1,6 @@
 'use client';
 
-import { EmailName, Folder, type Message, type Thread } from "nylas";
+import { Draft, EmailName, Folder, type Message, type Thread } from "nylas";
 import React, { useEffect, useRef, useState } from "react";
 import 'quill/dist/quill.snow.css';
 import type Quill from "quill";
@@ -18,6 +18,22 @@ type Props = {
   userEmail?: EmailName
 };
 
+const getTo = (latestDraftOrMessage: Message | Draft): EmailName[] | undefined => {
+  let to = undefined;
+
+  if (latestDraftOrMessage.object === "message") {
+    if (latestDraftOrMessage.replyTo && latestDraftOrMessage.replyTo.length > 0) {
+      to = latestDraftOrMessage.replyTo;
+    } else {
+      to = latestDraftOrMessage.from;
+    }
+  } else {
+    to = latestDraftOrMessage.to;
+  }
+
+  return to;
+};
+
 export default function Inbox(props: Props) {
   const [activeFolder, setActiveFolder] = useState(props.activeFolder);
   const [threads, setThreads] = useState(props.threads);
@@ -30,18 +46,7 @@ export default function Inbox(props: Props) {
     fetch(`/api/messages?${query}`)
       .then((response) => {
         response.json().then(json => {
-          const messages: Message[] = JSON.parse(json);
-          const emails = messages.filter(message => {
-            return props.userEmail
-              && !message.replyTo?.map(recipients => recipients.email).includes(props.userEmail.email);
-          }).sort((a, b) => b.date - a.date);
-          let to = undefined;
-
-          if (emails && emails[0].replyTo && emails[0].replyTo.length > 0) {
-            to = emails[0].replyTo;
-          } else {
-            to = emails[0].from;
-          }
+          const to = getTo(thread.latestDraftOrMessage);
 
           // Add a check for do-not reply type emails
           setThreadData({ subject: thread.latestDraftOrMessage.subject, messages: JSON.parse(json), to });
@@ -114,8 +119,11 @@ export default function Inbox(props: Props) {
                         <div className="email-thread-item is-clickable p-1" onClick={() => retrieveMessages(thread)}>
                           <div className="columns is-gapless">
                             <div className="column is-11">
-                              <p><b>{thread.subject}</b></p>
-                              <p>{thread.snippet?.substring(0, 20) + "..."}</p>
+                              <p className="is-size-5 has-text-weight-bold">
+                                {getTo(thread.latestDraftOrMessage)?.map(emailName => emailName.name)}
+                              </p>
+                              <p className="is-size-6">{thread.subject}</p>
+                              <p className="is-size-7">{thread.snippet?.substring(0, 100) + "..."}</p>
                             </div>
                             <div className="column">
                               <div className="is-flex is-justify-content-end pr-2 pt-2">

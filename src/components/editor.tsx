@@ -116,7 +116,11 @@ export default function Editor({ grantId, quill, quillRef, threadData, userEmail
               {"Generate Draft"}&nbsp;&nbsp;<FontAwesomeIcon icon={faPenToSquare} />
             </button>
           )}
-          <button className="button is-secondary" onClick={(e) => saveDraft(e.currentTarget, threadData)}>
+          <button
+            className="button is-secondary"
+            onClick={(e) => saveDraft(e.currentTarget, threadData)}
+            disabled={!threadData?.subject && !threadData?.to && quill?.getText().trim() === ""}
+          >
             {"Save Draft"}&nbsp;&nbsp;<FontAwesomeIcon icon={faFloppyDisk} />
           </button>
           <button className='button is-primary' onClick={(e) => sendEmail(e.currentTarget, threadData)}>

@@ -1,7 +1,7 @@
 import Inbox from "@/components/inbox";
 import Login from "@/components/login";
 import { GRANT_ID_COOKIE } from "@/constants";
-import { fetchRecentThreads, getFolders, getThreadsByFolderId } from "@/nylas";
+import { fetchRecentThreads, getFolders, getGrant, getThreadsByFolderId } from "@/nylas";
 import { cookies } from 'next/headers';
 
 const getThreadsForInbox = async (grantId: string, folderId: string | undefined) => {
@@ -28,6 +28,11 @@ export default async function Home() {
   const folders = (await getFolders(grantId))['data'];
   const inbox = folders.find(folder => folder.name === activeFolder);
   const threads = await getThreadsForInbox(grantId, inbox?.id);
+  const grant = await getGrant(grantId);
+
+  if (!grant.email) {
+    throw new Error('No user email');
+  }
 
   return (
     <main>
@@ -66,7 +71,13 @@ export default async function Home() {
           </div>
         </div>
       </nav>
-      <Inbox activeFolder={activeFolder} grantId={grantId} threads={threads} folders={folders} />
+      <Inbox
+        activeFolder={activeFolder}
+        grantId={grantId}
+        threads={threads}
+        folders={folders}
+        userEmail={{ email: grant.email }}
+      />
     </main>
   );
 }

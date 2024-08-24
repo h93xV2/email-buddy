@@ -71,7 +71,7 @@ const getGoogleAuthUrl = async (userEmail: string) => {
 };
 
 const getGrant = async (grantId: string) => {
-  const grant = await nylas.grants.find({grantId});
+  const grant = await nylas.grants.find({ grantId });
 
   return grant.data;
 };

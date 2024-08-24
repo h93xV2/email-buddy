@@ -53,7 +53,7 @@ const isNoReply = async (userEmail: string, emailsInThread: Message[]) => {
   const result = await client.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
-      {"role": Role.SYSTEM, "content": ""}
+      { "role": Role.SYSTEM, "content": "" }
     ]
   });
 }

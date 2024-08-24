@@ -22,4 +22,4 @@ const exchangeCodeForGrant = async (code: string): Promise<string> => {
   return grantId;
 };
 
-export {exchangeCodeForGrant}
+export { exchangeCodeForGrant }

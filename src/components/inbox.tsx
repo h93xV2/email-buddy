@@ -1,6 +1,6 @@
 'use client';
 
-import { Folder, type Message, type Thread } from "nylas";
+import { EmailName, Folder, type Message, type Thread } from "nylas";
 import React, { useEffect, useRef, useState } from "react";
 import 'quill/dist/quill.snow.css';
 import type Quill from "quill";
@@ -14,7 +14,8 @@ type Props = {
   threads: Thread[],
   folders: Folder[],
   grantId: string,
-  activeFolder: string
+  activeFolder: string,
+  userEmail?: EmailName
 };
 
 export default function Inbox(props: Props) {
@@ -30,10 +31,20 @@ export default function Inbox(props: Props) {
       .then((response) => {
         response.json().then(json => {
           const messages: Message[] = JSON.parse(json);
-          const to = messages.sort((a, b) => b.date - a.date);
+          const emails = messages.filter(message => {
+            return props.userEmail
+              && !message.replyTo?.map(recipients => recipients.email).includes(props.userEmail.email);
+          }).sort((a, b) => b.date - a.date);
+          let to = undefined;
+
+          if (emails && emails[0].replyTo && emails[0].replyTo.length > 0) {
+            to = emails[0].replyTo;
+          } else {
+            to = emails[0].from;
+          }
 
           // Add a check for do-not reply type emails
-          setThreadData({ subject: thread.latestDraftOrMessage.subject, messages: JSON.parse(json) });
+          setThreadData({ subject: thread.latestDraftOrMessage.subject, messages: JSON.parse(json), to });
 
           if (quill) {
             quill.setText("");
@@ -68,7 +79,7 @@ export default function Inbox(props: Props) {
 
   return (
     <div className="columns is-gapless">
-      <div className="column is-one-quarter">
+      <div className="column is-one-third">
         <div className="columns is-gapless">
           <div className="column is-one-third">
             <div className="menu pt-3 pl-3">
@@ -124,7 +135,7 @@ export default function Inbox(props: Props) {
           </div>
         </div>
       </div>
-      <div className="column full-height-column p-5 is-flex is-flex-direction-column">
+      <div className="column full-height-column p-5 is-flex is-flex-direction-column messages-and-editor">
         <div className='is-flex-grow-1 messages is-overflow-y-auto'>
           <div className="fixed-grid has-1-cols">
             <div className="grid p-2">
@@ -137,7 +148,13 @@ export default function Inbox(props: Props) {
           </div>
         </div>
         <div className="is-align-content-end editor-container">
-          <Editor grantId={props.grantId} quill={quill} quillRef={quillRef} threadData={threadData} />
+          <Editor
+            grantId={props.grantId}
+            quill={quill}
+            quillRef={quillRef}
+            threadData={threadData}
+            userEmail={props.userEmail}
+          />
         </div>
       </div>
     </div>

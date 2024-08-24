@@ -6,4 +6,4 @@ type ThreadData = {
   to?: EmailName[]
 };
 
-export {type ThreadData}
+export { type ThreadData }

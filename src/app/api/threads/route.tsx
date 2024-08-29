@@ -1,4 +1,4 @@
-import { getThreadsByFolderId } from "@/nylas";
+import { getThreadsByFolderId, setThreadToRead } from "@/nylas";
 
 export async function GET(request: Request) {
   const searchParams = new URL(request.url).searchParams;
@@ -12,4 +12,12 @@ export async function GET(request: Request) {
   const threads = (await getThreadsByFolderId(grantId, folderId))['data'];
 
   return new Response(JSON.stringify(threads));
+}
+
+export async function PUT(request: Request) {
+  const {threadId, grantId} = await request.json();
+
+  setThreadToRead(grantId, threadId);
+
+  return new Response(null, {status: 204});
 }

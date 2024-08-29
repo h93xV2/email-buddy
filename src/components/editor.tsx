@@ -1,23 +1,22 @@
 'use client';
 
-import { faEnvelope, faFloppyDisk, faPaperPlane, faPenToSquare } from "@fortawesome/free-regular-svg-icons";
+import { faEnvelope, faPenToSquare } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ThreadData } from "@/components/types";
+import { ThreadData, DraftResult } from "@/types";
 import Quill from "quill";
 import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import { Dispatch, SetStateAction, useState } from "react";
 import { EmailName } from "nylas";
+import SendEmail from "./send-email";
+import SaveDraft from "./save-draft";
 
 type Props = {
   grantId: string,
   quill: Quill | null,
   quillRef: React.RefObject<HTMLDivElement>,
   threadData: ThreadData | null,
-  userEmail?: EmailName
-};
-
-type DraftResult = {
-  body: string
+  userEmail?: EmailName,
+  refresh: () => Promise<void>
 };
 
 const toggleEditorControls = (setIsEditorControlsVisible: Dispatch<SetStateAction<boolean>>) => {
@@ -31,7 +30,7 @@ const toggleEditorControls = (setIsEditorControlsVisible: Dispatch<SetStateActio
   }
 };
 
-export default function Editor({ grantId, quill, quillRef, threadData, userEmail }: Props) {
+export default function Editor({ grantId, quill, quillRef, threadData, refresh }: Props) {
   const to = threadData?.to;
   const [isEditorControlsVisible, setIsEditorControlsVisible] = useState(true);
   const generateDraft = (button: HTMLButtonElement, threadData: ThreadData) => {
@@ -48,26 +47,6 @@ export default function Editor({ grantId, quill, quillRef, threadData, userEmail
           quill.setText(result.body);
         }
       }).finally(() => button.classList.remove('is-loading'));
-    });
-  };
-  const saveDraft = (button: HTMLButtonElement, threadData: ThreadData | null) => {
-    button.classList.add('is-loading');
-
-    fetch('/api/drafts', {
-      method: 'POST',
-      body: JSON.stringify({ grantId, body: quill?.getText(), subject: threadData?.subject, to })
-    }).finally(() => {
-      button.classList.remove('is-loading');
-    });
-  };
-  const sendEmail = (button: HTMLButtonElement, threadData: ThreadData | null) => {
-    button.classList.add('is-loading');
-
-    fetch('/api/messages', {
-      method: 'POST',
-      body: JSON.stringify({ grantId, body: quill?.getText(), subject: threadData?.subject, to, from: [userEmail] })
-    }).finally(() => {
-      button.classList.remove('is-loading');
     });
   };
 
@@ -93,6 +72,7 @@ export default function Editor({ grantId, quill, quillRef, threadData, userEmail
                 type="email"
                 placeholder="Email"
                 defaultValue={to?.map(emailName => emailName.email)}
+                onChange={(event) => {}}
               />
               <span className="icon is-small is-left">
                 <FontAwesomeIcon icon={faEnvelope} />
@@ -116,16 +96,13 @@ export default function Editor({ grantId, quill, quillRef, threadData, userEmail
               {"Generate Draft"}&nbsp;&nbsp;<FontAwesomeIcon icon={faPenToSquare} />
             </button>
           )}
-          <button
-            className="button is-secondary"
-            onClick={(e) => saveDraft(e.currentTarget, threadData)}
-            disabled={!threadData?.subject && !threadData?.to && quill?.getText().trim() === ""}
-          >
-            {"Save Draft"}&nbsp;&nbsp;<FontAwesomeIcon icon={faFloppyDisk} />
-          </button>
-          <button className='button is-primary' onClick={(e) => sendEmail(e.currentTarget, threadData)}>
-            {"Send"}&nbsp;&nbsp;<FontAwesomeIcon icon={faPaperPlane} />
-          </button>
+          <SaveDraft
+            threadData={threadData}
+            getBody={() => quill?.getText()}
+            isDisabled={!threadData?.subject && !threadData?.to && quill?.getText().trim() === ""}
+            refresh={refresh}
+          />
+          <SendEmail threadData={threadData} getBody={() => quill?.getText()} refresh={refresh} />
         </div>
       </div>
     </div>

@@ -76,7 +76,17 @@ const getGrant = async (grantId: string) => {
   return grant.data;
 };
 
+const setThreadToRead = (grantId: string, threadId: string) => {
+  nylas.threads.update({
+    identifier: grantId,
+    threadId: threadId,
+    requestBody: {
+      unread: false
+    }
+  });
+};
+
 export {
   fetchRecentThreads, getMessagesInThread, getFolders, getThreadsByFolderId, sendEmail, createDraft,
-  getGoogleAuthUrl, getGrant
+  getGoogleAuthUrl, getGrant, setThreadToRead
 }

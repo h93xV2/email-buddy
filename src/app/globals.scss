@@ -10,6 +10,10 @@ html, body {
   border-radius: var(--bulma-radius);
 }
 
+.email-thread-item:hover {
+  background-color: var(--bulma-white-ter);
+}
+
 .messages {
   background-color: white;
   height: 0px;

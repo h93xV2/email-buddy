@@ -1,16 +1,9 @@
 import Inbox from "@/components/inbox";
 import Login from "@/components/login";
 import { GRANT_ID_COOKIE } from "@/constants";
-import { fetchRecentThreads, getFolders, getGrant, getThreadsByFolderId } from "@/nylas";
+import { getFolders, getGrant } from "@/nylas";
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import { cookies } from 'next/headers';
-
-const getThreadsForInbox = async (grantId: string, folderId: string | undefined) => {
-  if (folderId) {
-    return (await getThreadsByFolderId(grantId, folderId))['data'];
-  }
-
-  return (await fetchRecentThreads(grantId))['data'];
-};
 
 export default async function Home() {
   const cookieStore = cookies();
@@ -25,14 +18,18 @@ export default async function Home() {
   }
 
   const activeFolder = 'INBOX';
-  const folders = (await getFolders(grantId))['data'];
-  const inbox = folders.find(folder => folder.name === activeFolder);
-  const threads = await getThreadsForInbox(grantId, inbox?.id);
   const grant = await getGrant(grantId);
 
   if (!grant.email) {
     throw new Error('No user email');
   }
+
+  const queryClient = new QueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ['folders', grantId],
+    queryFn: async () => (await getFolders(grantId))['data']
+  });
 
   return (
     <main>
@@ -71,13 +68,13 @@ export default async function Home() {
           </div>
         </div>
       </nav>
-      <Inbox
-        activeFolder={activeFolder}
-        grantId={grantId}
-        threads={threads}
-        folders={folders}
-        userEmail={{ email: grant.email }}
-      />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <Inbox
+          activeFolder={activeFolder}
+          grantId={grantId}
+          userEmail={{ email: grant.email }}
+        />
+      </HydrationBoundary>
     </main>
   );
 }

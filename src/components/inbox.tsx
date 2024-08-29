@@ -1,72 +1,44 @@
 'use client';
 
-import { Draft, EmailName, Folder, type Message, type Thread } from "nylas";
+import { EmailName, Folder, Message, type Thread } from "nylas";
 import React, { useEffect, useRef, useState } from "react";
 import 'quill/dist/quill.snow.css';
 import type Quill from "quill";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEnvelopeOpen } from "@fortawesome/free-regular-svg-icons";
-import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
-import { ThreadData } from "@/components/types";
+import { ThreadData } from "@/types";
 import Editor from "./editor";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Folders from "./folders";
+import Threads from "./threads";
 
 type Props = {
-  threads: Thread[],
-  folders: Folder[],
   grantId: string,
   activeFolder: string,
   userEmail?: EmailName
 };
 
-const getTo = (latestDraftOrMessage: Message | Draft): EmailName[] | undefined => {
-  let to = undefined;
-
-  if (latestDraftOrMessage.object === "message") {
-    if (latestDraftOrMessage.replyTo && latestDraftOrMessage.replyTo.length > 0) {
-      to = latestDraftOrMessage.replyTo;
-    } else {
-      to = latestDraftOrMessage.from;
-    }
-  } else {
-    to = latestDraftOrMessage.to;
-  }
-
-  return to;
-};
-
 export default function Inbox(props: Props) {
+  const grantId = props.grantId;
+  const queryClient = useQueryClient();
   const [activeFolder, setActiveFolder] = useState(props.activeFolder);
-  const [threads, setThreads] = useState(props.threads);
+  const folderQueryResult = useQuery<Folder[]>({
+    queryKey: ['folders', grantId],
+    queryFn: async () => await (await fetch(`/api/folders?grantId=${grantId}`)).json()
+  });
+  const folders = folderQueryResult.data;
+  const activeFolderId = folders?.find(folder => folder.name === activeFolder)?.id;
+  const threadsQueryResult = useQuery<Thread[]>({
+    queryKey: ['threads', grantId, activeFolderId],
+    queryFn: async () => await (await fetch(`/api/threads?grantId=${grantId}&folderId=${activeFolderId}`)).json(),
+    enabled: !!activeFolderId,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+  const threads = threadsQueryResult.data;
   const [threadData, setThreadData] = useState<ThreadData | null>(null);
   const quillRef = useRef<HTMLDivElement>(null);
   const [quill, setQuill] = useState<Quill | null>(null);
-  const retrieveMessages = (thread: Thread) => {
-    const query = new URLSearchParams({ threadId: thread.id, grantId: props.grantId });
-
-    fetch(`/api/messages?${query}`)
-      .then((response) => {
-        response.json().then(json => {
-          const to = getTo(thread.latestDraftOrMessage);
-
-          // Add a check for do-not reply type emails
-          setThreadData({ subject: thread.latestDraftOrMessage.subject, messages: JSON.parse(json), to });
-
-          if (quill) {
-            quill.setText("");
-          }
-        });
-      });
-  };
   const updateThreadsForFolder = (folder: Folder) => {
     setActiveFolder(folder.name);
-    document.querySelectorAll('.thread-cell').forEach(element => element.classList.add('is-skeleton'));
-
-    fetch(`/api/threads?folderId=${folder.id}&grantId=${props.grantId}`).then(response => {
-      response.json().then(newThreads => {
-        setThreads(newThreads);
-        document.querySelectorAll('.thread-cell').forEach(element => element.classList.remove('is-skeleton'));
-      });
-    });
   };
 
   useEffect(() => {
@@ -86,60 +58,27 @@ export default function Inbox(props: Props) {
     <div className="columns is-gapless">
       <div className="column is-one-third">
         <div className="columns is-gapless">
-          <div className="column is-one-third">
-            <div className="menu pt-3 pl-3">
-              <p className="menu-label">Folders</p>
-              <ul className="menu-list">
-                {
-                  props.folders.map((folder, index) => {
-                    if (folder.attributes && folder.attributes.length > 0) {
-                      return (
-                        <li key={index}>
-                          <a
-                            className={folder.name === activeFolder ? 'is-active' : ''}
-                            onClick={() => updateThreadsForFolder(folder)}
-                          >
-                            {`${folder.attributes[0].replace("\\", "")} (${folder.totalCount})`}
-                          </a>
-                        </li>
-                      );
-                    }
-                  })
-                }
-              </ul>
-            </div>
+          <div className="column is-narrow">
+            <Folders
+              folders={folders}
+              activeFolder={activeFolder}
+              onClick={(folder) => updateThreadsForFolder(folder)}
+            />
           </div>
           <div className="column full-height-column is-overflow-y-auto">
-            <div className="fixed-grid has-1-cols">
-              <div className="grid p-2">
-                {
-                  threads.map((thread, index) => {
-                    return (
-                      <div className="cell thread-cell" key={index}>
-                        <div className="email-thread-item is-clickable p-1" onClick={() => retrieveMessages(thread)}>
-                          <div className="columns is-gapless">
-                            <div className="column is-11">
-                              <p className="is-size-5 has-text-weight-bold">
-                                {getTo(thread.latestDraftOrMessage)?.map(emailName => emailName.name)}
-                              </p>
-                              <p className="is-size-6">{thread.subject}</p>
-                              <p className="is-size-7">{thread.snippet?.substring(0, 100) + "..."}</p>
-                            </div>
-                            <div className="column">
-                              <div className="is-flex is-justify-content-end pr-2 pt-2">
-                                <FontAwesomeIcon
-                                  icon={thread.unread ? faEnvelope : faEnvelopeOpen}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                }
-              </div>
-            </div>
+            <Threads
+              threads={threads}
+              grantId={grantId}
+              setThreadData={setThreadData}
+              userEmail={props.userEmail}
+              quill={quill}
+              refresh={async () => {
+                await folderQueryResult.refetch();
+                await queryClient.invalidateQueries({
+                  queryKey: ['threads', grantId, activeFolderId]
+                });
+              }}
+            />
           </div>
         </div>
       </div>
@@ -150,6 +89,7 @@ export default function Inbox(props: Props) {
               {threadData?.messages.map((message, index) => {
                 return <div className="cell" key={index}>
                   <div dangerouslySetInnerHTML={{ __html: message.body as string }} />
+                  {index < threadData.messages.length - 1 && <hr />}
                 </div>
               })}
             </div>
@@ -162,6 +102,12 @@ export default function Inbox(props: Props) {
             quillRef={quillRef}
             threadData={threadData}
             userEmail={props.userEmail}
+            refresh={async () => {
+              await folderQueryResult.refetch();
+              await queryClient.invalidateQueries({
+                queryKey: ['threads', grantId, activeFolderId]
+              });
+            }}
           />
         </div>
       </div>

@@ -46,26 +46,9 @@ export default async function Home() {
           </div>
         </div>
         <div className="navbar-end">
-          <div className="navbar-item has-dropdown is-hoverable">
-            <a className="navbar-link">
-              Account
-            </a>
-            <div className="navbar-dropdown">
-              <a className="navbar-item">
-                Dashboard
-              </a>
-              <a className="navbar-item">
-                Profile
-              </a>
-              <a className="navbar-item">
-                Settings
-              </a>
-              <hr className="navbar-divider" />
-              <a className="navbar-item" href="/api/auth/logout">
-                Logout
-              </a>
-            </div>
-          </div>
+          <a className="navbar-item" href="/api/auth/logout">
+            Logout
+          </a>
         </div>
       </nav>
       <HydrationBoundary state={dehydrate(queryClient)}>

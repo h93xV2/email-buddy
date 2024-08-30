@@ -1,20 +1,16 @@
 'use client';
 
-import { ThreadData } from "@/types";
 import { faEnvelopeOpen } from "@fortawesome/free-regular-svg-icons";
 import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Draft, EmailName, Message, Thread } from "nylas";
-import Quill from "quill";
 
 type Props = {
-  threads?: Thread[],
-  grantId: string,
-  setThreadData: React.Dispatch<React.SetStateAction<ThreadData | null>>,
+  threads: Thread[],
   userEmail?: EmailName,
-  quill: Quill | null,
-  refresh: () => Promise<void>
-}
+  grantId: string
+  onClick: (thread: Thread) => void
+};
 
 const getSender = (latestDraftOrMessage: Message | Draft, userEmail?: EmailName) => {
   const latestReplyTo = latestDraftOrMessage.replyTo;
@@ -37,68 +33,25 @@ const getSender = (latestDraftOrMessage: Message | Draft, userEmail?: EmailName)
   return undefined;
 };
 
-const getTo = (messages: Message[], userEmail?: EmailName): EmailName[] | undefined => {
-  const latestInboundMessage = messages.find(message => message.object === 'message'
-    && userEmail && !message.to.map(recipient => recipient.email).includes(userEmail.email));
-
-  let to = undefined;
-
-  if (latestInboundMessage) {
-    if (latestInboundMessage.replyTo && latestInboundMessage.replyTo.length > 0) {
-      to = latestInboundMessage.replyTo;
-    } else if (latestInboundMessage.to && latestInboundMessage.to.length > 0) {
-      to = latestInboundMessage.to;
-    } else {
-      to = latestInboundMessage.from;
-    }
-  }
-
-  return to;
-};
-
-export default function Threads({threads, grantId, setThreadData, userEmail, quill, refresh}: Props) {
-  threads?.sort((a, b) => b.latestMessageReceivedDate - a.latestMessageReceivedDate);
-
-  const retrieveMessages = (thread: Thread) => {
-    const query = new URLSearchParams({ threadId: thread.id, grantId });
-
-    fetch(`/api/messages?${query}`)
-      .then((response) => {
-        response.json().then(json => {
-          const to = getTo(JSON.parse(json), userEmail);
-
-          // Add a check for do-not reply type emails
-          setThreadData({
-            subject: thread.latestDraftOrMessage.subject,
-            messages: JSON.parse(json),
-            to,
-            userEmail: userEmail,
-            grantId: grantId
-          });
-
-          if (quill) {
-            quill.setText("");
-          }
-
-          // TODO: Update the read icon of the thread
-          if (thread.unread) {
-            fetch(`/api/threads`, {method: 'PUT', body: JSON.stringify({threadId: thread.id, grantId})})
-              .then(async () => await refresh());
-          }
-        });
-      });
-  };
+export default function Threads({ threads, userEmail, onClick, grantId }: Props) {
+  threads.sort((a, b) => b.latestMessageReceivedDate - a.latestMessageReceivedDate);
 
   return (
     <div className="fixed-grid has-1-cols">
       <div className="grid p-2">
         {
-          threads?.map((thread, index) => {
+          threads.map((thread, index) => {
             const sender = getSender(thread.latestDraftOrMessage, userEmail);
 
             return (
               <div className="cell thread-cell" key={index}>
-                <div className="email-thread-item is-clickable p-2" onClick={() => retrieveMessages(thread)}>
+                <div className="email-thread-item is-clickable p-2" onClick={() => {
+                  onClick(thread);
+                  if (thread.unread) {
+                    fetch(`/api/threads`, {method: 'PUT', body: JSON.stringify({threadId: thread.id, grantId})})
+                      .then(() => onClick(thread));
+                  }
+                }}>
                   <div className="columns is-gapless">
                     <div className="column is-11">
                       <p className="grid">
@@ -107,7 +60,7 @@ export default function Threads({threads, grantId, setThreadData, userEmail, qui
                         </span>
                         <span className="cell has-text-right is-size-7">
                           {
-                            new Date(thread.latestMessageReceivedDate*1000)
+                            new Date(thread.latestMessageReceivedDate * 1000)
                               .toLocaleString('en-US', { timeZoneName: 'short' })
                           }
                         </span>

@@ -10,16 +10,21 @@ export default function Login() {
 
   return (
     <main className="container">
-      <h1 className="title mb-3">{"Email Buddy"}</h1>
-      <div className="field mb-3">
-        <p className="control has-icons-left">
-          <input className="input" type="email" placeholder="Email Address" onChange={(e) => setUserEmail(e.target.value)} />
-          <span className="icon is-small is-left">
-            <FontAwesomeIcon icon={faEnvelope} />
-          </span>
-        </p>
+      <div className="is-flex is-justify-content-center">
+       <div style={{width: "600px"}}>
+        <h1 className="title mb-3">{"Email Buddy"}</h1>
+          <h2 className="subtitle mb-3">{"Login"}</h2>
+          <div className="field mb-3">
+            <p className="control has-icons-left">
+              <input className="input" type="email" placeholder="Email Address" onChange={(e) => setUserEmail(e.target.value)} />
+              <span className="icon is-small is-left">
+                <FontAwesomeIcon icon={faEnvelope} />
+              </span>
+            </p>
+          </div>
+          <a className="button" href={`/api/auth?userEmail=${encodeURIComponent(userEmail)}`}>Sign In</a>
+       </div>
       </div>
-      <a className="button" href={`/api/auth?userEmail=${encodeURIComponent(userEmail)}`}>Sign In</a>
     </main>
   );
 }

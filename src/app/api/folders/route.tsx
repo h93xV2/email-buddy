@@ -10,5 +10,5 @@ export async function GET(request: Request) {
 
   const folders = (await getFolders(grantId))['data'];
 
-  return new Response(JSON.stringify(folders));
+  return Response.json(folders);
 }

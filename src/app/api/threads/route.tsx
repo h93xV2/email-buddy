@@ -11,7 +11,7 @@ export async function GET(request: Request) {
 
   const threads = (await getThreadsByFolderId(grantId, folderId))['data'];
 
-  return new Response(JSON.stringify(threads));
+  return Response.json(threads);
 }
 
 export async function PUT(request: Request) {

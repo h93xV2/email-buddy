@@ -4,7 +4,6 @@ import { EmailName, Folder, Message, type Thread } from "nylas";
 import React, { useEffect, useRef, useState } from "react";
 import 'quill/dist/quill.snow.css';
 import type Quill from "quill";
-import { ThreadData } from "@/types";
 import Editor from "./editor";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Folders from "./folders";
@@ -16,29 +15,80 @@ type Props = {
   userEmail?: EmailName
 };
 
+const getFolders = async (grantId: string) => {
+  return await (await fetch(`/api/folders?grantId=${grantId}`)).json();
+};
+
+const getThreads = async (grantId: string, activeFolderId?: string) => {
+  if (activeFolderId) {
+    return await (await fetch(`/api/threads?grantId=${grantId}&folderId=${activeFolderId}`)).json();
+  }
+
+  return [];
+};
+
+const getMessages = async (grantId: string, thread?: Thread) => {
+  if (thread) {
+    return await (await fetch(`/api/messages?grantId=${grantId}&threadId=${thread.id}`)).json();
+  }
+
+  return [];
+};
+
+const getTo = (messages: Message[], userEmail?: EmailName): EmailName[] | undefined => {
+  const latestInboundMessage = messages.find(message => message.object === 'message'
+    && userEmail && message.to.map(recipient => recipient.email).includes(userEmail.email));
+
+  let to = undefined;
+
+  if (latestInboundMessage) {
+    if (latestInboundMessage.replyTo && latestInboundMessage.replyTo.length > 0) {
+      to = latestInboundMessage.replyTo;
+    } else {
+      to = latestInboundMessage.from;
+    }
+  }
+
+  return to;
+};
+
 export default function Inbox(props: Props) {
   const grantId = props.grantId;
   const queryClient = useQueryClient();
   const [activeFolder, setActiveFolder] = useState(props.activeFolder);
   const folderQueryResult = useQuery<Folder[]>({
     queryKey: ['folders', grantId],
-    queryFn: async () => await (await fetch(`/api/folders?grantId=${grantId}`)).json()
+    queryFn: async () => await getFolders(grantId),
+    refetchInterval: 10000
   });
-  const folders = folderQueryResult.data;
-  const activeFolderId = folders?.find(folder => folder.name === activeFolder)?.id;
+  const folders = folderQueryResult.data ?? [];
+  const activeFolderId = folders.find(folder => folder.name === activeFolder)?.id;
   const threadsQueryResult = useQuery<Thread[]>({
     queryKey: ['threads', grantId, activeFolderId],
-    queryFn: async () => await (await fetch(`/api/threads?grantId=${grantId}&folderId=${activeFolderId}`)).json(),
+    queryFn: () => getThreads(grantId, activeFolderId),
     enabled: !!activeFolderId,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+    refetchInterval: 10000
   });
-  const threads = threadsQueryResult.data;
-  const [threadData, setThreadData] = useState<ThreadData | null>(null);
+  const threads = threadsQueryResult.data ?? [];
+  const [activeThread, setActiveThread] = useState<Thread | undefined>();
+  const messagesQueryResult = useQuery<Message[]>({
+    queryKey: ['messages', grantId, activeThread],
+    queryFn: () => getMessages(grantId, activeThread),
+    enabled: !!activeThread,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+  const messages = messagesQueryResult.data ?? [];
   const quillRef = useRef<HTMLDivElement>(null);
   const [quill, setQuill] = useState<Quill | null>(null);
-  const updateThreadsForFolder = (folder: Folder) => {
-    setActiveFolder(folder.name);
+  const threadData = {
+    subject: activeThread?.subject,
+    messages,
+    to: getTo(messages, props.userEmail),
+    grantId,
+    userEmail: props.userEmail
   };
 
   useEffect(() => {
@@ -62,22 +112,15 @@ export default function Inbox(props: Props) {
             <Folders
               folders={folders}
               activeFolder={activeFolder}
-              onClick={(folder) => updateThreadsForFolder(folder)}
+              onClick={(folder) => setActiveFolder(folder.name)}
             />
           </div>
           <div className="column full-height-column is-overflow-y-auto">
             <Threads
               threads={threads}
-              grantId={grantId}
-              setThreadData={setThreadData}
               userEmail={props.userEmail}
-              quill={quill}
-              refresh={async () => {
-                await folderQueryResult.refetch();
-                await queryClient.invalidateQueries({
-                  queryKey: ['threads', grantId, activeFolderId]
-                });
-              }}
+              onClick={(thread) => setActiveThread(thread)}
+              grantId={grantId}
             />
           </div>
         </div>
@@ -86,10 +129,10 @@ export default function Inbox(props: Props) {
         <div className='is-flex-grow-1 messages is-overflow-y-auto'>
           <div className="fixed-grid has-1-cols">
             <div className="grid p-2">
-              {threadData?.messages.map((message, index) => {
+              {messages.map((message, index) => {
                 return <div className="cell" key={index}>
                   <div dangerouslySetInnerHTML={{ __html: message.body as string }} />
-                  {index < threadData.messages.length - 1 && <hr />}
+                  {index < messages.length - 1 && <hr />}
                 </div>
               })}
             </div>
@@ -97,15 +140,16 @@ export default function Inbox(props: Props) {
         </div>
         <div className="is-align-content-end editor-container">
           <Editor
-            grantId={props.grantId}
             quill={quill}
             quillRef={quillRef}
             threadData={threadData}
-            userEmail={props.userEmail}
             refresh={async () => {
               await folderQueryResult.refetch();
               await queryClient.invalidateQueries({
                 queryKey: ['threads', grantId, activeFolderId]
+              });
+              await queryClient.invalidateQueries({
+                queryKey: ['messages', grantId, activeThread]
               });
             }}
           />

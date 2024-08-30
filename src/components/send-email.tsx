@@ -3,6 +3,7 @@
 import { ThreadData } from "@/types";
 import { faPaperPlane } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Message } from "nylas";
 
 type Props = {
   threadData: ThreadData | null,
@@ -14,6 +15,16 @@ export default function SendEmail({ threadData, getBody, refresh }: Props) {
   const sendEmail = (button: HTMLButtonElement, threadData: ThreadData | null) => {
     button.classList.add('is-loading');
 
+    const messages: Message[] = JSON.parse(JSON.stringify(threadData?.messages ?? []));
+
+    let replyToMessageId = undefined;
+
+    if (messages.length > 0) {
+      messages.sort((a, b) => b.createdAt - a.createdAt);
+
+      replyToMessageId = messages[0].id;
+    }
+
     fetch('/api/messages', {
       method: 'POST',
       body: JSON.stringify({
@@ -21,7 +32,8 @@ export default function SendEmail({ threadData, getBody, refresh }: Props) {
         body: getBody(),
         subject: threadData?.subject,
         to: threadData?.to,
-        from: [threadData?.userEmail]
+        from: [threadData?.userEmail],
+        replyToMessageId
       })
     }).then(async () => {
       await refresh();

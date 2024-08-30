@@ -8,9 +8,8 @@ export async function GET(request: Request) {
   if (threadId && grantId) {
     try {
       const messages = (await getMessagesInThread(grantId, threadId)).data;
-      const data = JSON.stringify(messages);
-
-      return Response.json(data);
+      
+      return Response.json(messages);
     } catch (error) {
       console.error(error);
 
@@ -22,10 +21,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { to, subject, body, grantId, from } = await request.json();
+  const { to, subject, body, grantId, from, replyToMessageId } = await request.json();
 
   try {
-    const sendMessage = await sendEmail(grantId, { to, subject, body, from });
+    const sendMessage = await sendEmail(grantId, { to, subject, body, from, replyToMessageId });
     const data = JSON.stringify(sendMessage);
 
     return Response.json(data);

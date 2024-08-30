@@ -1,21 +1,19 @@
 'use client';
 
-import { faEnvelope, faPenToSquare } from "@fortawesome/free-regular-svg-icons";
+import { faEnvelope } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ThreadData, DraftResult } from "@/types";
+import { ThreadData } from "@/types";
 import Quill from "quill";
 import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import { Dispatch, SetStateAction, useState } from "react";
-import { EmailName } from "nylas";
 import SendEmail from "./send-email";
 import SaveDraft from "./save-draft";
+import GenerateDraft from "./generate-draft";
 
 type Props = {
-  grantId: string,
   quill: Quill | null,
   quillRef: React.RefObject<HTMLDivElement>,
-  threadData: ThreadData | null,
-  userEmail?: EmailName,
+  threadData: ThreadData,
   refresh: () => Promise<void>
 };
 
@@ -30,25 +28,9 @@ const toggleEditorControls = (setIsEditorControlsVisible: Dispatch<SetStateActio
   }
 };
 
-export default function Editor({ grantId, quill, quillRef, threadData, refresh }: Props) {
-  const to = threadData?.to;
+export default function Editor({ quill, quillRef, threadData, refresh }: Props) {
+  const to = threadData.to;
   const [isEditorControlsVisible, setIsEditorControlsVisible] = useState(true);
-  const generateDraft = (button: HTMLButtonElement, threadData: ThreadData) => {
-    const messages = threadData.messages;
-
-    button.classList.add('is-loading');
-
-    fetch('/api/drafts/body', {
-      method: 'POST',
-      body: JSON.stringify({ grantId, messages, subject: threadData.subject, to: threadData.to })
-    }).then(response => {
-      response.json().then((result: DraftResult) => {
-        if (quill) {
-          quill.setText(result.body);
-        }
-      }).finally(() => button.classList.remove('is-loading'));
-    });
-  };
 
   return (
     <div className='pt-4 pl-6 pr-6 pb-5'>
@@ -88,18 +70,11 @@ export default function Editor({ grantId, quill, quillRef, threadData, refresh }
         </div>
         <div ref={quillRef} style={{ minHeight: '200px' }} />
         <div className='pb-2 pt-2 buttons is-right'>
-          {threadData && (
-            <button
-              className='button is-link'
-              onClick={(e) => { if (threadData?.messages) generateDraft(e.currentTarget, threadData) }}
-            >
-              {"Generate Draft"}&nbsp;&nbsp;<FontAwesomeIcon icon={faPenToSquare} />
-            </button>
-          )}
+          <GenerateDraft quill={quill} threadData={threadData} />
           <SaveDraft
             threadData={threadData}
             getBody={() => quill?.getText()}
-            isDisabled={!threadData?.subject && !threadData?.to && quill?.getText().trim() === ""}
+            isDisabled={!threadData.subject && !threadData.to && quill?.getText().trim() === ""}
             refresh={refresh}
           />
           <SendEmail threadData={threadData} getBody={() => quill?.getText()} refresh={refresh} />

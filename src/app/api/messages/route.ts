@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   if (threadId && grantId) {
     try {
       const messages = (await getMessagesInThread(grantId, threadId)).data;
-      
+
       return Response.json(messages);
     } catch (error) {
       console.error(error);

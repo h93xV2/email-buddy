@@ -11,8 +11,8 @@ export default function Login() {
   return (
     <main className="container">
       <div className="is-flex is-justify-content-center">
-       <div style={{width: "600px"}}>
-        <h1 className="title mb-3">{"Email Buddy"}</h1>
+        <div style={{ width: "600px" }}>
+          <h1 className="title mb-3">{"Email Buddy"}</h1>
           <h2 className="subtitle mb-3">{"Login"}</h2>
           <div className="field mb-3">
             <p className="control has-icons-left">
@@ -23,7 +23,7 @@ export default function Login() {
             </p>
           </div>
           <a className="button" href={`/api/auth?userEmail=${encodeURIComponent(userEmail)}`}>Sign In</a>
-       </div>
+        </div>
       </div>
     </main>
   );

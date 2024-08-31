@@ -8,7 +8,7 @@ type Props = {
   quill: Quill | null
 };
 
-export default function GenerateDraft({threadData, quill}: Props) {
+export default function GenerateDraft({ threadData, quill }: Props) {
   const grantId = threadData.grantId;
   const generateDraft = (button: HTMLButtonElement, threadData: ThreadData) => {
     const messages = threadData.messages;

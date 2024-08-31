@@ -28,7 +28,7 @@ export default function Threads({ threads, userEmail, onClick, grantId }: Props)
                 <div className="email-thread-item is-clickable p-2" onClick={() => {
                   onClick(thread);
                   if (thread.unread) {
-                    fetch(`/api/threads`, {method: 'PUT', body: JSON.stringify({threadId: thread.id, grantId})})
+                    fetch(`/api/threads`, { method: 'PUT', body: JSON.stringify({ threadId: thread.id, grantId }) })
                       .then(() => onClick(thread));
                   }
                 }}>

@@ -54,7 +54,7 @@ export default function Editor({ quill, quillRef, threadData, refresh }: Props) 
                 type="email"
                 placeholder="Email"
                 defaultValue={to?.map(emailName => emailName.email)}
-                onChange={(event) => {}}
+                onChange={(event) => { }}
               />
               <span className="icon is-small is-left">
                 <FontAwesomeIcon icon={faEnvelope} />
@@ -77,7 +77,7 @@ export default function Editor({ quill, quillRef, threadData, refresh }: Props) 
             isDisabled={!threadData.subject && !threadData.to && quill?.getText().trim() === ""}
             refresh={refresh}
           />
-          <SendEmail threadData={threadData} getBody={() => quill?.getText()} refresh={refresh} />
+          <SendEmail threadData={threadData} getBody={() => quill?.getSemanticHTML()} refresh={refresh} />
         </div>
       </div>
     </div>

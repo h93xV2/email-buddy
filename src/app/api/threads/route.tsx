@@ -15,9 +15,9 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const {threadId, grantId} = await request.json();
+  const { threadId, grantId } = await request.json();
 
   setThreadToRead(grantId, threadId);
 
-  return new Response(null, {status: 204});
+  return new Response(null, { status: 204 });
 }

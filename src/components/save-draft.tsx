@@ -11,7 +11,7 @@ type Props = {
   refresh: () => Promise<void>
 }
 
-export default function SaveDraft ({threadData, getBody, isDisabled, refresh}: Props) {
+export default function SaveDraft({ threadData, getBody, isDisabled, refresh }: Props) {
   const saveDraft = (button: HTMLButtonElement, threadData: ThreadData | null) => {
     button.classList.add('is-loading');
 

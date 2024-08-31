@@ -8,7 +8,7 @@ type Props = {
   onClick: (folder: Folder) => void
 }
 
-export default function Folders({folders, activeFolder, onClick}: Props) {
+export default function Folders({ folders, activeFolder, onClick }: Props) {
   return (
     <div className="menu pt-3 pl-3">
       <p className="menu-label">Folders</p>

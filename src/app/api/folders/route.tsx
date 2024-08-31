@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   const grantId = searchParams.get('grantId');
 
   if (!grantId) {
-    return new Response("Missing grant ID", {status: 400});
+    return new Response("Missing grant ID", { status: 400 });
   }
 
   const folders = (await getFolders(grantId))['data'];

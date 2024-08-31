@@ -119,6 +119,10 @@ export default function Inbox(props: Props) {
                   <p><b>{"From: "}</b>{message.from && message.from.map(from => from.email).join(",")}</p>
                   <p><b>{"To: "}</b>{message.to.map(from => from.email).join(",")}</p>
                   <p><b>{"Subject: "}</b>{message.subject ?? ''}</p>
+                  <p>
+                    <b>{"Date: "}</b>
+                    {new Date(message.date * 1000).toLocaleString('en-US', { timeZoneName: 'short' })}
+                  </p>
                   <div className="mt-3" dangerouslySetInnerHTML={{ __html: message.body as string }} />
                   {index < messages.length - 1 && <hr />}
                 </div>

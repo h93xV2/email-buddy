@@ -2,7 +2,8 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with
 [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 It was built for the [Nylas AI and Communications Challenge](https://dev.to/challenges/nylas). The app offers a
-simplified email inbox with some LLM powered features.
+simplified email inbox with some LLM powered features. You can read about the app in
+[the submission post](https://dev.to/logarithmicspirals/email-buddy-an-llm-enhanced-inbox-h7b).
 
 ## Getting Started
 

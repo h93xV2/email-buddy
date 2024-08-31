@@ -33,7 +33,9 @@ export default function Editor({ quill, quillRef, threadData, refresh, showButto
   const {to, isNoReply} = threadData;
   const [isEditorControlsVisible, setIsEditorControlsVisible] = useState(true);
 
-  document.getElementById('no-reply-warning')?.classList.remove('is-hidden');
+  if (document) {
+    document.getElementById('no-reply-warning')?.classList.remove('is-hidden');
+  }
 
   return (
     <div className='pt-4 pl-6 pr-6 pb-5'>

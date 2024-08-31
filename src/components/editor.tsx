@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ThreadData } from "@/types";
 import Quill from "quill";
 import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import SendEmail from "./send-email";
 import SaveDraft from "./save-draft";
 import GenerateDraft from "./generate-draft";
@@ -33,9 +33,9 @@ export default function Editor({ quill, quillRef, threadData, refresh, showButto
   const {to, isNoReply} = threadData;
   const [isEditorControlsVisible, setIsEditorControlsVisible] = useState(true);
 
-  if (document) {
+  useEffect(() => {
     document.getElementById('no-reply-warning')?.classList.remove('is-hidden');
-  }
+  }, [isNoReply]);
 
   return (
     <div className='pt-4 pl-6 pr-6 pb-5'>

@@ -13,12 +13,37 @@ type Props = {
   onClick: (thread: Thread) => void
 };
 
+const defaultText = `
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque a odio consectetur, varius dui sed, consequat
+  ante. Aenean ut malesuada erat, feugiat euismod lectus. Integer at imperdiet enim. Vestibulum rutrum felis vel tellus
+  sollicitudin elementum. Vivamus tempor, dolor vitae vestibulum tincidunt, nunc est malesuada arcu, ut porta lectus
+  dolor non libero. Quisque vulputate, ex condimentum luctus rhoncus, ligula mi cursus risus, sit amet hendrerit nulla
+  leo ac eros. Cras at imperdiet orci, nec consequat nisl.
+`;
+
+const skeletonCell = (
+  <div className="cell thread-cell is-skeleton">
+    {defaultText}
+  </div>
+);
+
 export default function Threads({ threads, userEmail, onClick, grantId }: Props) {
   threads.sort((a, b) => b.latestMessageReceivedDate - a.latestMessageReceivedDate);
+
+  let skeletonCells = [];
+
+  if (threads.length === 0) {
+    for (let i = 0; i < 5; i ++) {
+      skeletonCells.push(skeletonCell);
+    }
+  }
 
   return (
     <div className="fixed-grid has-1-cols">
       <div className="grid p-2">
+        {
+          threads.length === 0 && skeletonCells.map((skeleton, key) => <div key={key}>{skeleton}</div>)
+        }
         {
           threads.map((thread, index) => {
             const sender = getSender(thread.latestDraftOrMessage, userEmail);

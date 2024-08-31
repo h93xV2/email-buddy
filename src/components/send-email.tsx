@@ -8,10 +8,11 @@ import { Message } from "nylas";
 type Props = {
   threadData: ThreadData | null,
   getBody: () => string | undefined,
-  refresh: () => Promise<void>
+  refresh: () => Promise<void>,
+  isDisabled: boolean
 }
 
-export default function SendEmail({ threadData, getBody, refresh }: Props) {
+export default function SendEmail({ threadData, getBody, refresh, isDisabled }: Props) {
   const sendEmail = (button: HTMLButtonElement, threadData: ThreadData | null) => {
     button.classList.add('is-loading');
 
@@ -43,7 +44,11 @@ export default function SendEmail({ threadData, getBody, refresh }: Props) {
   };
 
   return (
-    <button className='button is-primary' onClick={(e) => sendEmail(e.currentTarget, threadData)}>
+    <button
+      className={`button is-primary${isDisabled ? ' is-loading' : ''}`}
+      onClick={(e) => sendEmail(e.currentTarget, threadData)}
+      disabled={isDisabled}
+    >
       {"Send"}&nbsp;&nbsp;<FontAwesomeIcon icon={faPaperPlane} />
     </button>
   );

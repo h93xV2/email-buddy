@@ -14,7 +14,8 @@ type Props = {
   quill: Quill | null,
   quillRef: React.RefObject<HTMLDivElement>,
   threadData: ThreadData,
-  refresh: () => Promise<void>
+  refresh: () => Promise<void>,
+  showButtons: boolean
 };
 
 const toggleEditorControls = (setIsEditorControlsVisible: Dispatch<SetStateAction<boolean>>) => {
@@ -28,9 +29,11 @@ const toggleEditorControls = (setIsEditorControlsVisible: Dispatch<SetStateActio
   }
 };
 
-export default function Editor({ quill, quillRef, threadData, refresh }: Props) {
-  const to = threadData.to;
+export default function Editor({ quill, quillRef, threadData, refresh, showButtons }: Props) {
+  const {to, isNoReply} = threadData;
   const [isEditorControlsVisible, setIsEditorControlsVisible] = useState(true);
+
+  document.getElementById('no-reply-warning')?.classList.remove('is-hidden');
 
   return (
     <div className='pt-4 pl-6 pr-6 pb-5'>
@@ -54,7 +57,7 @@ export default function Editor({ quill, quillRef, threadData, refresh }: Props) 
                 type="email"
                 placeholder="Email"
                 defaultValue={to?.map(emailName => emailName.email)}
-                onChange={(event) => { }}
+                disabled={true}
               />
               <span className="icon is-small is-left">
                 <FontAwesomeIcon icon={faEnvelope} />
@@ -69,6 +72,18 @@ export default function Editor({ quill, quillRef, threadData, refresh }: Props) 
           </div>
         </div>
         <div ref={quillRef} style={{ minHeight: '200px' }} />
+        {
+          isNoReply && isNoReply.isNoReply && (
+            <div className="notification is-warning mt-3" id="no-reply-warning">
+              <button
+                className="delete"
+                onClick={(e) => e.currentTarget.parentElement?.classList.add('is-hidden')}
+              ></button>
+              <p><b>Reply may not be necessary!</b></p>
+              {isNoReply.explanation}
+            </div>
+          )
+        }
         <div className='pb-2 pt-2 buttons is-right'>
           <GenerateDraft quill={quill} threadData={threadData} />
           <SaveDraft
@@ -77,7 +92,12 @@ export default function Editor({ quill, quillRef, threadData, refresh }: Props) 
             isDisabled={!threadData.subject && !threadData.to && quill?.getText().trim() === ""}
             refresh={refresh}
           />
-          <SendEmail threadData={threadData} getBody={() => quill?.getSemanticHTML()} refresh={refresh} />
+          <SendEmail
+            threadData={threadData}
+            getBody={() => quill?.getSemanticHTML()}
+            refresh={refresh}
+            isDisabled={!showButtons}
+          />
         </div>
       </div>
     </div>

@@ -14,20 +14,22 @@ export default function GenerateDraft({ threadData, quill }: Props) {
     const messages = threadData.messages;
 
     button.classList.add('is-loading');
+    button.disabled = true;
 
     fetch('/api/drafts/body', {
       method: 'POST',
-      body: JSON.stringify({ grantId, messages, subject: threadData.subject, to: threadData.to })
+      body: JSON.stringify({ grantId, messages })
     }).then(response => {
       response.json().then((result: DraftResult) => {
         if (quill) {
           quill.setText(result.body);
         }
-      }).finally(() => button.classList.remove('is-loading'));
+      }).finally(() => {
+        button.classList.remove('is-loading');
+        button.disabled = false;
+      });
     });
   };
-
-  console.log(threadData.messages);
 
   return (
     <button

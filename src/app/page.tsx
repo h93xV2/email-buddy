@@ -4,6 +4,7 @@ import { GRANT_ID_COOKIE } from "@/constants";
 import { getFolders, getGrant } from "@/nylas";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import { cookies } from 'next/headers';
+import { Grant } from "nylas";
 
 export default async function Home() {
   const cookieStore = cookies();
@@ -18,7 +19,7 @@ export default async function Home() {
   }
 
   const activeFolder = 'INBOX';
-  const grant = await getGrant(grantId);
+  const grant: Grant = await getGrant(grantId);
 
   if (!grant.email) {
     throw new Error('No user email');

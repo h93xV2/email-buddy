@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Folders from "./folders";
 import Threads from "./threads";
 import getTo from "@/app/utils/get-to";
+import { IsNoReplyResult } from "@/openai";
 
 type Props = {
   grantId: string,
@@ -36,6 +37,13 @@ const getMessages = async (grantId: string, thread?: Thread) => {
   return [];
 };
 
+const getNoReplyResult = async (grantId: string, messages: Message[]) => {
+  return await (await fetch(`/api/screen`, {
+    method: 'POST',
+    body: JSON.stringify({grantId, messages})
+  })).json();
+};
+
 export default function Inbox(props: Props) {
   const grantId = props.grantId;
   const queryClient = useQueryClient();
@@ -53,7 +61,7 @@ export default function Inbox(props: Props) {
     enabled: !!activeFolderId,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    refetchInterval: 10000
+    refetchInterval: 10000,
   });
   const threads = threadsQueryResult.data ?? [];
   const [activeThread, setActiveThread] = useState<Thread | undefined>();
@@ -65,6 +73,14 @@ export default function Inbox(props: Props) {
     refetchOnWindowFocus: false,
   });
   const messages = messagesQueryResult.data ?? [];
+  const isNoReplyQueryResult = useQuery<IsNoReplyResult>({
+    queryKey: ['is-no-reply', grantId, messages],
+    queryFn: async () => await getNoReplyResult(grantId, messages),
+    enabled: messages.length > 0,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+  const isNoReply = isNoReplyQueryResult.data;
   const quillRef = useRef<HTMLDivElement>(null);
   const [quill, setQuill] = useState<Quill | null>(null);
   const threadData = {
@@ -72,7 +88,8 @@ export default function Inbox(props: Props) {
     messages,
     to: getTo(messages, props.userEmail),
     grantId,
-    userEmail: props.userEmail
+    userEmail: props.userEmail,
+    isNoReply
   };
 
   useEffect(() => {
@@ -103,7 +120,9 @@ export default function Inbox(props: Props) {
             <Threads
               threads={threads}
               userEmail={props.userEmail}
-              onClick={(thread) => setActiveThread(thread)}
+              onClick={async (thread) => {
+                setActiveThread(thread);
+              }}
               grantId={grantId}
             />
           </div>
@@ -144,6 +163,7 @@ export default function Inbox(props: Props) {
                 queryKey: ['messages', grantId, activeThread]
               });
             }}
+            showButtons={messagesQueryResult.isFetched && isNoReplyQueryResult.isFetched}
           />
         </div>
       </div>

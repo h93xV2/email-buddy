@@ -14,6 +14,7 @@ type Props = {
 export default function SaveDraft({ threadData, getBody, isDisabled, refresh }: Props) {
   const saveDraft = (button: HTMLButtonElement, threadData: ThreadData | null) => {
     button.classList.add('is-loading');
+    button.disabled = true;
 
     fetch('/api/drafts', {
       method: 'POST',
@@ -27,6 +28,7 @@ export default function SaveDraft({ threadData, getBody, isDisabled, refresh }: 
       await refresh();
     }).finally(() => {
       button.classList.remove('is-loading');
+      button.disabled = false;
     });
   };
 

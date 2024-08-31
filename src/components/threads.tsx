@@ -1,36 +1,16 @@
 'use client';
 
+import getSender from "@/app/utils/get-sender";
 import { faEnvelopeOpen } from "@fortawesome/free-regular-svg-icons";
 import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Draft, EmailName, Message, Thread } from "nylas";
+import { EmailName, Thread } from "nylas";
 
 type Props = {
   threads: Thread[],
   userEmail?: EmailName,
   grantId: string
   onClick: (thread: Thread) => void
-};
-
-const getSender = (latestDraftOrMessage: Message | Draft, userEmail?: EmailName) => {
-  const latestReplyTo = latestDraftOrMessage.replyTo;
-  const from = latestDraftOrMessage.from;
-
-  let possibleSender = latestReplyTo && latestReplyTo.length > 0 ? latestReplyTo : latestDraftOrMessage.to;
-
-  if (possibleSender && userEmail && !possibleSender.map(sender => sender.email).includes(userEmail.email)) {
-    const senderName = possibleSender[0].name;
-
-    return senderName ? senderName : possibleSender[0].email;
-  }
-
-  if (from) {
-    const fromName = from[0].name;
-
-    return fromName ? fromName : from[0].email;
-  }
-
-  return undefined;
 };
 
 export default function Threads({ threads, userEmail, onClick, grantId }: Props) {

@@ -8,6 +8,7 @@ import Editor from "./editor";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Folders from "./folders";
 import Threads from "./threads";
+import getTo from "@/app/utils/get-to";
 
 type Props = {
   grantId: string,
@@ -33,23 +34,6 @@ const getMessages = async (grantId: string, thread?: Thread) => {
   }
 
   return [];
-};
-
-const getTo = (messages: Message[], userEmail?: EmailName): EmailName[] | undefined => {
-  const latestInboundMessage = messages.find(message => message.object === 'message'
-    && userEmail && message.to.map(recipient => recipient.email).includes(userEmail.email));
-
-  let to = undefined;
-
-  if (latestInboundMessage) {
-    if (latestInboundMessage.replyTo && latestInboundMessage.replyTo.length > 0) {
-      to = latestInboundMessage.replyTo;
-    } else {
-      to = latestInboundMessage.from;
-    }
-  }
-
-  return to;
 };
 
 export default function Inbox(props: Props) {
@@ -130,8 +114,12 @@ export default function Inbox(props: Props) {
           <div className="fixed-grid has-1-cols">
             <div className="grid p-2">
               {messages.map((message, index) => {
+                console.log(message);
                 return <div className="cell" key={index}>
-                  <div dangerouslySetInnerHTML={{ __html: message.body as string }} />
+                  <p><b>{"From: "}</b>{message.from && message.from.map(from => from.email).join(",")}</p>
+                  <p><b>{"To: "}</b>{message.to.map(from => from.email).join(",")}</p>
+                  <p><b>{"Subject: "}</b>{message.subject ?? ''}</p>
+                  <div className="mt-3" dangerouslySetInnerHTML={{ __html: message.body as string }} />
                   {index < messages.length - 1 && <hr />}
                 </div>
               })}

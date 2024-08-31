@@ -56,12 +56,12 @@ const IsNoReplyResult = z.object({
 type IsNoReplyResult = z.infer<typeof IsNoReplyResult>;
 
 const IS_NO_REPLY_PROMPT = `
-You are a hyper intelligent email screener.
-A user will present you with an email message they received.
-Your job is to determine if the email should be replied to.
-Respond with true if the email is a no-reply and false otherwise.
-Include an explanation about why someone might not want to reply.
-Caution is preferred.
+  You are a hyper intelligent email screener.
+  A user will present you with an email message they received.
+  Your job is to determine if the email should be replied to.
+  Respond with true if the email is a no-reply and false otherwise.
+  Include an explanation about why someone might not want to reply.
+  Caution is preferred.
 `;
 
 const isNoReply = async (userEmail: string, emailsInThread: Message[]) => {

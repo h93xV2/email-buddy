@@ -16,7 +16,12 @@ export default function Login() {
           <h2 className="subtitle mb-3">{"Login"}</h2>
           <div className="field mb-3">
             <p className="control has-icons-left">
-              <input className="input" type="email" placeholder="Email Address" onChange={(e) => setUserEmail(e.target.value)} />
+              <input
+                className="input"
+                type="email"
+                placeholder="Email Address"
+                onChange={(e) => setUserEmail(e.target.value)}
+              />
               <span className="icon is-small is-left">
                 <FontAwesomeIcon icon={faEnvelope} />
               </span>
